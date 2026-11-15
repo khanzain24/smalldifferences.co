@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>small differences</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+/* Same colors as the wall. One typeface, two sizes. Layout: three photos over a spec sheet. */
+:root{
+  --bg:#000; --ink:#fff; --item:#F37021; --press:#3D6BFF; --read:#6a6a6a; --rule:#262626; --ghost:#2e2e2e;
+  --mono:"Space Mono",ui-monospace,Menlo,Consolas,monospace;
+  --s:clamp(12px,1.1vw,15px); --l:clamp(22px,4.2vw,46px);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font:400 var(--s)/1.45 var(--mono);text-transform:uppercase;-webkit-font-smoothing:antialiased}
+a,button{font:inherit;text-transform:inherit;color:var(--item);background:none;border:0;padding:0;cursor:pointer;text-decoration:none;transition:color .18s}
+a:hover,button:hover,a:focus-visible,button:focus-visible{color:var(--press);outline:none}
+.wrap{max-width:1100px;margin:0 auto;padding:16px}
+.top{display:flex;justify-content:space-between;gap:16px;padding-bottom:14px;border-bottom:1px solid var(--rule);word-break:break-all}
+.strip{color:var(--ghost);white-space:nowrap;overflow:hidden;word-break:normal;margin:14px 0 0;user-select:none}
+h1{font:400 var(--l)/1.05 var(--mono);margin:26px 0 22px;word-break:break-all;letter-spacing:-.01em}
+.no{color:var(--read);margin:0 0 26px}
+.figs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 30px}
+figure{margin:0;display:flex;flex-direction:column;gap:8px;min-width:0}
+.frame{aspect-ratio:1/1;border:1px solid var(--rule);display:grid;place-items:center;overflow:hidden;position:relative}
+.frame pre{margin:0;font:400 9.5px/1.18 var(--mono);color:var(--ghost);text-transform:uppercase}
+.frame pre i{font-style:normal;color:var(--ink)}
+.frame img{width:100%;height:100%;object-fit:contain;display:block}
+.frame.photo{background:repeating-linear-gradient(135deg,#0c0c0c 0 10px,#141414 10px 20px)}
+.frame.photo span{color:var(--read);text-align:center;padding:0 12px}
+figcaption{color:var(--read);display:flex;justify-content:space-between;gap:8px}
+figcaption b{font-weight:400;color:var(--ink)}
+dl{margin:0;border-top:1px solid var(--rule)}
+dl div{display:grid;grid-template-columns:minmax(90px,1fr) 3fr;gap:16px;padding:9px 0;border-bottom:1px solid var(--rule)}
+dt{color:var(--read)} dd{margin:0}
+.buy{margin:26px 0 0;display:flex;flex-direction:column;gap:16px}
+.sizes{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center}
+.sizes span{color:var(--read)}
+.sizes button{color:var(--ink)}
+.sizes button[aria-pressed="true"]{color:var(--item)}
+.sizes button:hover,.sizes button:focus-visible{color:var(--press)}
+.add{font-size:var(--l);line-height:1.05;text-align:left;word-break:break-all;letter-spacing:-.01em}
+.status{color:var(--read);min-height:1.45em;margin:0;text-transform:none}
+.proto{margin:40px 0 0;padding-top:12px;border-top:1px dashed var(--rule);color:var(--read);display:flex;gap:16px;flex-wrap:wrap;text-transform:none}
+.proto button[aria-pressed="true"]{color:var(--ink)}
+/* click a picture to see it large */
+.frame.zoom{cursor:zoom-in}
+.frame.zoom:focus-visible{outline:1px solid var(--press);outline-offset:2px}
+#big{display:none;position:fixed;inset:0;z-index:20;background:var(--bg);padding:16px;flex-direction:column;gap:12px}
+#big.open{display:flex}
+#big .bar{display:flex;justify-content:space-between;gap:16px;color:var(--read)}
+#big .bar b{font-weight:400;color:var(--ink)}
+#big .stage{flex:1;min-height:0;display:grid;place-items:center;cursor:zoom-out}
+#big .stage{overflow:hidden}
+#big .stage img,#big .nav{display:flex;justify-content:space-between}
+@media (max-width:640px){.figs{grid-template-columns:1fr 1fr}.figs figure:first-child{grid-column:1 / -1}}
+@media (prefers-reduced-motion:reduce){a,button{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><a href="index.html">&larr;NARCISSISMOFSMALLDIFFERENCES</a><a href="#" id="cart">CART</a></div>
+  <main>
+    <section class="pics">
+      <div class="figs" id="figs"></div>
+    </section>
+    <section class="sheet">
+      <h1 id="name"></h1>
+      <dl id="specs"></dl>
+      <div class="buy">
+        <div class="sizes" id="sizes" role="group" aria-label="Size"></div>
+        <button class="add" id="add">ADDTOCART</button>
+        <p class="status" id="status" aria-live="polite"></p>
+      </div>
+    </section>
+  </main>
+  <p class="strip" aria-hidden="true" id="strip"></p>
+</div>
+<div id="big" role="dialog" aria-modal="true" aria-label="Larger picture">
+  <div class="bar"><span id="bigcap"></span><button id="bigclose">Close</button></div>
+  <div class="stage" id="bigstage"></div>
+  <div class="nav"><button id="bigprev">&larr; Prev</button><button id="bignext">Next &rarr;</button></div>
+</div>
+<script>
+// Where carts live. Change this one line when the shop moves to its new domain.
+var SHOP = "https://sterntao.com";
+var SHIP = "Made to order. Ships in about a week.";
+var P = {
+  "cresta-run-cap": { name:"CRESTARUNCAP", type:"cap", price:"$35", sizes:["ONE SIZE"], variants:{"ONE SIZE":"43810044379271"},
+    pics:[{src:"img/cresta-run-cap-front.jpg",label:"Front"},{src:"img/cresta-run-cap-angle.jpg",label:"Angle"},{src:"img/cresta-run-cap-back.jpg",label:"Back"}],
+    specs:[["Item","Cresta Run Cap"],["Price","$35"],["Blank","Organic baseball cap"],["Color","Charcoal"],["Mark","Embroidered, front"],["Fit","Adjustable strap"],["Ships",SHIP]] },
+  "situational-awareness": { name:"SITUATIONALAWARENESS", type:"ls", price:"$40.50", sizes:["S","M","L","XL","2XL","3XL"],
+    variants:{"S":"44679503315079","M":"44679503347847","L":"44679503380615","XL":"44679503413383","2XL":"44679503446151","3XL":"44679503478919"},
+    prices:{"2XL":"$43","3XL":"$46"},
+    pics:[{src:"img/situational-awareness-front.jpg",label:"Front"},{src:"img/situational-awareness-back.jpg",label:"Back"},{src:"img/situational-awareness-detail.jpg",label:"Back, detail"}],
+    specs:[["Item","Situational Awareness Long Sleeve"],["Price","$40.50, 2XL $43, 3XL $46"],["Blank","Premium heavyweight long sleeve"],["Color","Midnight blue"],["Print","Chest mark front, chart back"],["Fit","True to size"],["Ships",SHIP]] },
+  "stern-tao": { name:"STERNTAO", type:"cap", price:"$32", sizes:["ONE SIZE"], variants:{"ONE SIZE":"43800067670151"},
+    pics:[{src:"img/stern-tao-front.jpg",label:"Front"},{src:"img/stern-tao-angle.jpg",label:"Angle"},{src:"img/stern-tao-back.jpg",label:"Back"}],
+    specs:[["Item","Company Cap, Boiler Room Edition"],["Price","$32"],["Blank","Otto Cap 18-772"],["Color","Black"],["Mark","Embroidered, front"],["Fit","Adjustable strap"],["Ships",SHIP]] },
+  "europe-arab-bank": { name:"EUROPEARABBANK", type:"cap", price:"$45", sizes:["ONE SIZE"], variants:{"ONE SIZE":"46036138131591"},
+    pics:[{src:"img/europe-arab-bank-front.jpg",label:"Front"},{src:"img/europe-arab-bank-angle.jpg",label:"Angle"},{src:"img/europe-arab-bank-back.jpg",label:"Back"}],
+    specs:[["Item","Europe Arab Bank Cap"],["Price","$45"],["Blank","Garment washed baseball cap"],["Color","Navy"],["Mark","Embroidered, front"],["Fit","Adjustable strap"],["Ships",SHIP]] }
+};
+var size = null, cur = null;
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+function show(){
+  var id = location.hash.slice(1); if (!P[id]) id = "situational-awareness";
+  var p = cur = P[id]; size = p.sizes.length === 1 ? p.sizes[0] : null;
+  document.title = p.specs[0][1] + " / small differences";
+  document.getElementById("name").textContent = p.name;
+  var alt = p.specs[0][1], pics = p.pics || [], h = "";
+  for (var i = 0; i < 3; i++){
+    var pic = pics[i];
+    h += '<figure><div class="frame' + (pic
+      ? ' zoom" tabindex="0" role="button" aria-label="See this picture larger"><img src="' + pic.src + '" alt="' + alt + ', ' + pic.label.toLowerCase() + '">'
+      : ' photo"><span>Photo to come</span>') +
+      '</div><figcaption><b>Fig. ' + (i + 1) + '</b><span>' + (pic ? pic.label : "") + '</span></figcaption></figure>';
+  }
+  document.getElementById("figs").innerHTML = h;
+  document.getElementById("specs").innerHTML = p.specs.map(function(r){ return "<div><dt>" + esc(r[0]) + "</dt><dd>" + esc(r[1]) + "</dd></div>"; }).join("");
+  document.getElementById("sizes").innerHTML = "<span>Size</span>" + p.sizes.map(function(s){
+    return '<button data-s="' + s + '" aria-pressed="' + (s === size) + '">' + s + "</button>"; }).join("");
+  document.getElementById("status").textContent = "";
+  var ph = "NARCISSISMOFSMALLDIFFERENCES", s = ""; for (var i = 0; i < 12; i++) s += ph; document.getElementById("strip").textContent = s;
+}
+document.getElementById("sizes").addEventListener("click", function(e){
+  var b = e.target.closest("button"); if (!b) return; size = b.dataset.s;
+  this.querySelectorAll("button").forEach(function(x){ x.setAttribute("aria-pressed", x === b); });
+  document.getElementById("status").textContent = "";
+});
+document.getElementById("add").addEventListener("click", function(){
+  var st = document.getElementById("status");
+  if (!size){ st.textContent = "Pick a size first."; return; }
+  var v = cur.variants && cur.variants[size];
+  if (!v){ st.textContent = "Not on sale yet."; return; }
+  st.textContent = "Adding " + ((cur.prices && cur.prices[size]) || cur.price) + " to cart...";
+  location.href = SHOP + "/cart/add?id=" + v + "&quantity=1";
+});
+document.getElementById("cart").href = SHOP + "/cart";
+
+// ---- click a picture to see it large ----
+var big = document.getElementById("big"), bigAt = 0, bigFrom = null;
+function frames(){ return [].slice.call(document.querySelectorAll("#figs .frame.zoom")); }
+function bigShow(i){
+  var fs = frames(); if (!fs.length) return; bigAt = (i + fs.length) % fs.length;
+  var f = fs[bigAt], cap = f.parentNode.querySelector("figcaption");
+  document.getElementById("bigstage").innerHTML = f.innerHTML;
+  document.getElementById("bigcap").innerHTML = "<b>" + cap.querySelector("b").textContent + "</b> " + cap.querySelector("span").textContent;
+  var many = fs.length > 1; document.getElementById("bigprev").hidden = !many; document.getElementById("bignext").hidden = !many;
+}
+function bigOpen(f){ bigFrom = f; bigShow(frames().indexOf(f)); big.classList.add("open"); document.getElementById("bigclose").focus(); }
+function bigClose(){ big.classList.remove("open"); if (bigFrom) bigFrom.focus(); }
+document.getElementById("figs").addEventListener("click", function(e){ var f = e.target.closest(".frame.zoom"); if (f) bigOpen(f); });
+document.getElementById("figs").addEventListener("keydown", function(e){
+  var f = e.target.closest(".frame.zoom"); if (f && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); bigOpen(f); } });
+document.getElementById("bigstage").addEventListener("click", bigClose);
+document.getElementById("bigclose").addEventListener("click", bigClose);
+document.getElementById("bigprev").addEventListener("click", function(){ bigShow(bigAt - 1); });
+document.getElementById("bignext").addEventListener("click", function(){ bigShow(bigAt + 1); });
+addEventListener("keydown", function(e){
+  if (!big.classList.contains("open")) return;
+  if (e.key === "Escape") bigClose(); else if (e.key === "ArrowLeft") bigShow(bigAt - 1); else if (e.key === "ArrowRight") bigShow(bigAt + 1);
+});
+addEventListener("hashchange", function(){ big.classList.remove("open"); });
+addEventListener("hashchange", show); show();
+</script>
+</body>
+</html>

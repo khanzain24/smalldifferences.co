@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>small differences</title>
+<meta name="description" content="Narcissism of small differences.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+/* All the colors of the site. Change them here. */
+:root{
+  --bg:#000;       /* page */
+  --ink:#fff;      /* the wall */
+  --item:#F37021;  /* product names, at rest */
+  --press:#3D6BFF; /* a product name you hover or click */
+  --read:#6a6a6a;  /* the copy of the phrase you are hovering */
+  --home:#6a6a6a;  /* the link back to zainkhan.co */
+  color-scheme:dark;
+}
+html,body{margin:0;background:var(--bg)}
+#sd{background:var(--bg);color:var(--ink);padding:16px 16px 48px;
+  font-family:"Space Mono",ui-monospace,Menlo,Consolas,monospace;font-weight:400;
+  font-size:clamp(12px,1.1vw,16px);line-height:1.35;text-transform:uppercase;
+  word-break:break-all;overflow-wrap:anywhere;cursor:default;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#sd .q,#sd b{transition:color .18s}
+#sd b{font-weight:inherit}
+#sd .q.on{color:var(--read)}
+#sd .q.on b{color:transparent}
+#sd a{color:var(--item);text-decoration:none;cursor:pointer;transition:color .18s}
+#sd a:hover,#sd a:active,#sd a:focus-visible{color:var(--press);outline:none}
+#sd a.home{color:var(--home)}
+#sd a.home:hover,#sd a.home:focus-visible{color:var(--press)}
+@media (prefers-reduced-motion:reduce){#sd .q,#sd b,#sd a{transition:none}}
+</style>
+</head>
+<body>
+<main id="sd" aria-label="Small Differences. Product names are hidden in the wall."></main>
+<script>
+(function(){
+// The phrase the whole wall is made of.
+var PHRASE = ["NARCISSISM", "OF", "SMALL", "DIFFERENCES"];
+var COPIES = 240;        // how many times the phrase repeats
+// PRODUCTS: the label is what shows in the wall, href is the product page.
+var PRODUCTS = [
+  { label: "CRESTARUNCAP", href: "product.html#cresta-run-cap" },
+  { label: "SITUATIONALAWARENESS", href: "product.html#situational-awareness" },
+  { label: "STERNTAO", href: "product.html#stern-tao" },
+  { label: "EUROPEARABBANK", href: "product.html#europe-arab-bank" }
+];
+var PRODUCTS_WITHIN = 22; // product names land among the first 22 copies
+var HOME = { label: "ZAINKHAN", href: "https://zainkhan.co" };
+
+var wall = document.getElementById("sd");
+var abc = "abcdefghijklmnopqrstuvwxyz", active = null, last = 0;
+function rnd(n){ return Math.floor(Math.random()*n); }
+function decoy(){ return "<b>" + abc[rnd(26)] + "</b>"; }
+function link(l, cls){ return '<a href="' + l.href + '"' + (cls ? ' class="' + cls + '"' : "") + ">" + l.label + "</a>" + decoy(); }
+
+// every copy is the same phrase; only its four decoy letters differ
+var parts = [];
+for (var i = 0; i < COPIES; i++){
+  parts.push('<span class="q">' + PHRASE.map(function(w){ return w + decoy(); }).join("") + "</span>");
+}
+var slots = [];
+while (slots.length < PRODUCTS.length){ var s = 2 + rnd(PRODUCTS_WITHIN); if (slots.indexOf(s) < 0) slots.push(s); }
+slots.sort(function(a,b){ return b - a; });
+PRODUCTS.forEach(function(p, k){ parts.splice(slots[k], 0, link(p, "")); });
+parts.push(link(HOME, "home")); // the way back to zainkhan.co closes the wall
+wall.innerHTML = parts.join("");
+
+function setActive(q){
+  if (q === active) return;
+  if (active) active.classList.remove("on");
+  active = q; if (q) q.classList.add("on");
+}
+function pick(e){ last = Date.now(); var q = e.target.closest(".q"); if (q) setActive(q); }
+wall.addEventListener("mouseover", pick);
+wall.addEventListener("click", pick);
+setInterval(function(){
+  if (Date.now() - last < 7000) return;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var qs = wall.querySelectorAll(".q");
+  for (var k = 0; k < 40; k++){
+    var q = qs[rnd(qs.length)], r = q.getBoundingClientRect();
+    if (r.top > 40 && r.bottom < innerHeight - 40){ setActive(q); return; }
+  }
+}, 3500);
+})();
+</script>
+</body>
+</html>
